@@ -25,33 +25,44 @@ namespace WpfApp2
         int[,] matrix;
         bool isRunning = true;
 
-        public MainWindow()
+        public MainWindow()//כולל בניית המטריצה ידנית
         {
             InitializeComponent();
             matrix = new int[20, 20];
             // BuildGrid();  //בנייה לפי אחוזים - אפשר לעשות מסך קלט
-            PrintGrid();
+            BuildGridByClick();
             isRunning = false;
             //יש שני כפתורים או להתחיל לפי רצף או כפתור נקסט
         }
-        public async void Start1()
-        {
-            for (int i = 0; i < 100; i++) //אפשר לעשות עד שנלחץ על עצור 
-            {
-                UpdateNextGeneration();
-                PrintGrid();
-                await Task.Delay(500); // מחכה שנייה בלי לחסום את ה־UI            
-            }
-        }
+
         public async void Start()
         {
             isRunning = !isRunning;
             if (isRunning) btnPlay.Content = "Stop"; else btnPlay.Content = "Start Run";
+            if (!isRunning) 
+            {
+                MessageBoxResult result = MessageBox.Show(
+                    "Do you want to reset the grid?",
+                    "",
+                    MessageBoxButton.YesNo
+                );
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    BuildGridByClick();
+                    btnPlay.Content = "Start Run";
+                }
+                else
+                {
+                    // do nothing
+                }
+               
+            }
             while (isRunning) // לולאה אינסופית עד שיגיע Stop
             {
                 UpdateNextGeneration();
                 PrintGrid();
-                await Task.Delay(500);
+                await Task.Delay(100);
             }
         }
 
@@ -74,7 +85,7 @@ namespace WpfApp2
                 }
             }
         }
-        public void PrintGrid()
+        public void BuildGridByClick()
         {
             grid1.Children.Clear();
 
@@ -84,7 +95,8 @@ namespace WpfApp2
                 {
                     Button btn = new Button
                     {
-                        Background = (matrix[i, j] == 1 ? Brushes.Black : Brushes.White),
+                        BorderBrush = Brushes.LightGray,
+                        Background = Brushes.White,
                         Tag = (i, j)  // שמירת המיקום בטאג
                     };
 
@@ -110,49 +122,50 @@ namespace WpfApp2
             // עדכון הצבע
             btn.Background = (matrix[i, j] == 1 ? Brushes.Black : Brushes.White);
         }
-        //public void PrintGrid()
-        //{
-        //    grid1.Children.Clear();
-        //    for (int i = 0; i < 20; i++)
-        //    {
-        //        for (int j = 0; j < 20; j++)
-        //        {
-        //            if (matrix[i, j] == 1)
-        //            {
-        //                grid1.Children.Add(new Button() { Background = Brushes.Black });  
-        //            }
-        //            else
-        //            {
-        //                grid1.Children.Add(new Button() { Background = Brushes.White });
-        //            }
-        //        }
-        //    }
+        public void PrintGrid()
+        {
+            grid1.Children.Clear();
+            for (int i = 0; i < 20; i++)
+            {
+                for (int j = 0; j < 20; j++)
+                {
+                    Button button = new Button();
+                    button.BorderBrush = Brushes.LightGray;
+                    button.Background = Brushes.White;
+                    if (matrix[i, j] == 1)
+                    {
+                        button.Background = Brushes.Black;
+                        grid1.Children.Add(button);
+                    }
+                    else
+                    {
+                        grid1.Children.Add(button);
+                    }
+                }
+            }
 
-        //}
+        }
 
         private int CountNeighbors(int row, int col)
         {
             int counter = 0;
-
-            //top and buttom row
-            int tempRow = row - 1;
-            for (int i = 0; i < 2; i++)
+            for (int i = row - 1; i <= row + 1; i++)
             {
-                if (tempRow >= 0 && tempRow < matrix.GetLength(0))
+                for (int j = col - 1; j <= col + 1; j++)
                 {
-                    counter += matrix[tempRow, col];
-                    if (col - 1 >= 0)
-                        counter += matrix[tempRow, col - 1];
-                    if (col + 1 < matrix.GetLength(1))
-                        counter += matrix[tempRow, col + 1];
+                    if (i >= 0 && i < matrix.GetLength(0)
+                        && j >= 0 && j < matrix.GetLength(1))
+                    {
+                        if (!(i == row && j == col))
+                        {
+                            if (matrix[i, j] == 1)
+                            {
+                                counter++;
+                            }
+                        }
+                    }
                 }
-                tempRow = row + 1;
             }
-            //sides
-            if (col - 1 >= 0)
-                counter += matrix[row, col - 1];
-            if (col + 1 < matrix.GetLength(1))
-                counter += matrix[row, col + 1];
             return counter;
         }
 
@@ -187,7 +200,7 @@ namespace WpfApp2
         private void Next(object sender, RoutedEventArgs e)
         {
             UpdateNextGeneration();
-            PrintGrid();
+            BuildGridByClick();
         }
 
         private void StartPlay(object sender, RoutedEventArgs e)
